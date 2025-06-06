@@ -1,9 +1,9 @@
 use std::path::Path;
 
-use file_size::FileSizeFilter;
-use file_name::FileNameFilter;
-use date_modified::DateModifiedFilter;
 use date_created::DateCreatedFilter;
+use date_modified::DateModifiedFilter;
+use file_name::FileNameFilter;
+use file_size::FileSizeFilter;
 use image_content::ImageContentFilter;
 
 pub trait Filter {
@@ -46,9 +46,15 @@ impl FilterKind {
         match kind {
             FilterKindType::FileName => FilterKind::FileName(FileNameFilter::new_from_file(path)),
             FilterKindType::FileSize => FilterKind::FileSize(FileSizeFilter::new_from_file(path)),
-            FilterKindType::DateModified => FilterKind::DateModified(DateModifiedFilter::new_from_file(path)),
-            FilterKindType::DateCreated => FilterKind::DateCreated(DateCreatedFilter::new_from_file(path)),
-            FilterKindType::ImageContent => FilterKind::ImageContent(ImageContentFilter::new_from_file(path)),
+            FilterKindType::DateModified => {
+                FilterKind::DateModified(DateModifiedFilter::new_from_file(path))
+            }
+            FilterKindType::DateCreated => {
+                FilterKind::DateCreated(DateCreatedFilter::new_from_file(path))
+            }
+            FilterKindType::ImageContent => {
+                FilterKind::ImageContent(ImageContentFilter::new_from_file(path))
+            }
         }
     }
 }

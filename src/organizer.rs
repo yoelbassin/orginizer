@@ -1,26 +1,29 @@
-use std::{path::{Path, PathBuf}};
+use std::path::Path;
 
 use walkdir::{DirEntry, WalkDir};
 
-use crate::filters::{Filter, FilterKind, FilterKindType};
+use crate::{
+    actions::Action,
+    filters::{Filter, FilterKind, FilterKindType},
+};
 
-fn process_entry(dir_entry: &DirEntry, filters: &Vec<Box<dyn Filter>>) -> bool {
+fn process_filter(dir_entry: &DirEntry, filters: &Vec<Box<dyn Filter>>) -> bool {
     filters.iter().all(|filter| filter.apply(&dir_entry.path()))
 }
 
-pub fn search_files(path: &Path, filters: &Vec<Box<dyn Filter>>) -> Vec<PathBuf> {
-    let mut files = Vec::new();
-    let dir_entries = WalkDir::new(path).into_iter();
-    for dir_entry in dir_entries {
-        if let Ok(entry) = dir_entry {
-            if entry.file_type().is_file() && process_entry(&entry, filters) {
-                let entry_path = entry.path().to_path_buf();
-                files.push(entry_path.clone());
-                println!("{}", entry_path.display());
-            }
-        }
-    }
-    files
+fn process_actions(entry: &DirEntry, actions: &Vec<Box<dyn Action>>) {
+    actions
+        .iter()
+        .for_each(|action| action.apply(&entry.path()));
+}
+
+pub fn search_files(path: &Path, filters: &Vec<Box<dyn Filter>>, actions: &Vec<Box<dyn Action>>) {
+    WalkDir::new(path)
+        .into_iter()
+        .filter_map(Result::ok)
+        .filter(|entry| entry.file_type().is_file())
+        .filter(|entry| process_filter(entry, filters))
+        .for_each(|entry| process_actions(&entry, actions));
 }
 
 fn create_filters_from_path(path: &Path, filters: &Vec<FilterKindType>) -> Vec<Box<dyn Filter>> {
@@ -30,11 +33,12 @@ fn create_filters_from_path(path: &Path, filters: &Vec<FilterKindType>) -> Vec<B
         .collect()
 }
 
-pub fn find_duplicates(source: &Path, destination: &Path, filters: &Vec<FilterKindType>) -> Vec<PathBuf> {
+pub fn find_duplicates(
+    source: &Path,
+    destination: &Path,
+    filters: &Vec<FilterKindType>,
+    actions: &Vec<Box<dyn Action>>,
+) {
     let filters_from_source = create_filters_from_path(source, filters);
-    let duplicates = search_files(destination, &filters_from_source);
-    duplicates
+    search_files(destination, &filters_from_source, actions);
 }
-
-
-

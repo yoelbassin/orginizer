@@ -1,6 +1,9 @@
 use std::path::Path;
 
-use crate::{filters::{Filter, FromFile}, utils::images::get_content_hash};
+use crate::{
+    filters::{Filter, FromFile},
+    utils::images::get_content_hash,
+};
 
 pub struct ImageContentFilter {
     pub content_hash: String,
