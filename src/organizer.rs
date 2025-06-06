@@ -2,7 +2,7 @@ use std::{path::{Path, PathBuf}};
 
 use walkdir::{DirEntry, WalkDir};
 
-use crate::filters::Filter;
+use crate::filters::{Filter, FilterKind, FilterKindType};
 
 fn process_entry(dir_entry: &DirEntry, filters: &Vec<Box<dyn Filter>>) -> bool {
     filters.iter().all(|filter| filter.apply(&dir_entry.path()))
@@ -22,3 +22,19 @@ pub fn search_files(path: &Path, filters: &Vec<Box<dyn Filter>>) -> Vec<PathBuf>
     }
     files
 }
+
+fn create_filters_from_path(path: &Path, filters: &Vec<FilterKindType>) -> Vec<Box<dyn Filter>> {
+    filters
+        .iter()
+        .map(|filter| Box::new(FilterKind::from_path(*filter, path)) as Box<dyn Filter>)
+        .collect()
+}
+
+pub fn find_duplicates(source: &Path, destination: &Path, filters: &Vec<FilterKindType>) -> Vec<PathBuf> {
+    let filters_from_source = create_filters_from_path(source, filters);
+    let duplicates = search_files(destination, &filters_from_source);
+    duplicates
+}
+
+
+
