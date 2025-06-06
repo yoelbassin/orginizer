@@ -1,0 +1,13 @@
+# Generated files
+/target/
+
+# Lock files
+Cargo.lock
+
+# Editor files
+.vscode/
+.idea/
+.cursorrules
+
+# OS files
+.DS_Store
