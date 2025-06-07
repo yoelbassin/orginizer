@@ -1,5 +1,5 @@
+use globset::GlobSet;
 use std::path::Path;
-
 use walkdir::{DirEntry, WalkDir};
 
 use crate::{
@@ -17,9 +17,19 @@ fn process_actions(entry: &DirEntry, actions: &Vec<Box<dyn Action>>) {
         .for_each(|action| action.apply(&entry.path()));
 }
 
-pub fn search_files(path: &Path, filters: &Vec<Box<dyn Filter>>, actions: &Vec<Box<dyn Action>>) {
+fn path_matches_any_glob<P: AsRef<std::path::Path>>(path: P, globset: &GlobSet) -> bool {
+    globset.is_match(path.as_ref())
+}
+
+pub fn search_files(
+    path: &Path,
+    filters: &Vec<Box<dyn Filter>>,
+    actions: &Vec<Box<dyn Action>>,
+    exclude: &GlobSet,
+) {
     WalkDir::new(path)
         .into_iter()
+        .filter_entry(|entry| !path_matches_any_glob(entry.path(), exclude))
         .filter_map(Result::ok)
         .filter(|entry| entry.file_type().is_file())
         .filter(|entry| process_filter(entry, filters))
@@ -38,7 +48,8 @@ pub fn find_duplicates(
     destination: &Path,
     filters: &Vec<FilterKindType>,
     actions: &Vec<Box<dyn Action>>,
+    exclude: &GlobSet,
 ) {
     let filters_from_source = create_filters_from_path(source, filters);
-    search_files(destination, &filters_from_source, actions);
+    search_files(destination, &filters_from_source, actions, exclude);
 }
