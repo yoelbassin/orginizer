@@ -18,14 +18,7 @@ fn process_actions(entry: &DirEntry, actions: &Vec<Box<dyn Action>>) {
         .for_each(|action| action.apply(&entry.path()));
 }
 
-fn create_filters_from_path(path: &Path, filters: &Vec<FilterKindType>) -> Vec<Box<dyn Filter>> {
-    filters
-        .iter()
-        .map(|filter| Box::new(FilterKind::from_path(*filter, path)) as Box<dyn Filter>)
-        .collect()
-}
-
-fn make_walker<P: AsRef<std::path::Path>>(
+pub fn make_walker<P: AsRef<std::path::Path>>(
     path: P,
     recursive: Option<bool>,
     exclude: &GlobSet,
@@ -39,6 +32,16 @@ fn make_walker<P: AsRef<std::path::Path>>(
     walker
         .into_iter()
         .filter_entry(|entry| !path_matches_any_glob(entry.path(), exclude))
+}
+
+pub fn create_filters_from_path(
+    path: &Path,
+    filters: &Vec<FilterKindType>,
+) -> Vec<Box<dyn Filter>> {
+    filters
+        .iter()
+        .map(|filter| Box::new(FilterKind::from_path(*filter, path)) as Box<dyn Filter>)
+        .collect()
 }
 
 pub fn find(

@@ -1,4 +1,5 @@
-use globset::{Glob, GlobSet};
+use globset::Glob;
+pub use globset::GlobSet;
 
 pub fn make_globset<I, S>(patterns: I) -> GlobSet
 where

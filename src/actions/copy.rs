@@ -8,7 +8,6 @@ pub struct CopyAction {
 
 impl Action for CopyAction {
     fn apply(&self, path: &Path) {
-        // copy to destination with some file hierarchy
         let dest = self.destination.join(path);
         println!("Copying {} to {}", path.display(), dest.display());
         println!("parent: {}", dest.parent().unwrap().display());
