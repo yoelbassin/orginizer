@@ -1,6 +1,6 @@
-use std::path::{Path, PathBuf};
-use std::fs;
 use crate::filters::{Filter, FromFile};
+use std::fs;
+use std::path::{Path, PathBuf};
 
 pub struct SkipSelfFilter {
     pub reference_path: PathBuf,
@@ -21,4 +21,3 @@ impl FromFile for SkipSelfFilter {
         Self { reference_path }
     }
 }
-

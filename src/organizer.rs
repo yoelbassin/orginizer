@@ -1,7 +1,7 @@
+use crate::utils::misc::path_matches_any_glob;
 use globset::GlobSet;
 use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
-use crate::utils::misc::path_matches_any_glob;
 
 use crate::{
     actions::Action,
@@ -25,7 +25,11 @@ fn create_filters_from_path(path: &Path, filters: &Vec<FilterKindType>) -> Vec<B
         .collect()
 }
 
-fn make_walker<P: AsRef<std::path::Path>>(path: P, recursive: Option<bool>, exclude: &GlobSet) -> impl Iterator<Item = walkdir::Result<DirEntry>> {
+fn make_walker<P: AsRef<std::path::Path>>(
+    path: P,
+    recursive: Option<bool>,
+    exclude: &GlobSet,
+) -> impl Iterator<Item = walkdir::Result<DirEntry>> {
     let do_recursive = recursive.unwrap_or(true);
     let walker = if do_recursive {
         WalkDir::new(path)
@@ -61,7 +65,13 @@ pub fn find_duplicates(
     recursive: Option<bool>,
 ) {
     let filters_from_source = create_filters_from_path(source, filters);
-    find(destination, &filters_from_source, actions, exclude, recursive);
+    find(
+        destination,
+        &filters_from_source,
+        actions,
+        exclude,
+        recursive,
+    );
 }
 
 pub fn find_all_duplicates_in_folder(
@@ -77,6 +87,12 @@ pub fn find_all_duplicates_in_folder(
         .filter(|entry| entry.file_type().is_file());
     for entry in walker {
         let filters_from_source = create_filters_from_path(entry.path(), filters);
-        find(destination, &filters_from_source, actions, exclude, recursive);
+        find(
+            destination,
+            &filters_from_source,
+            actions,
+            exclude,
+            recursive,
+        );
     }
 }

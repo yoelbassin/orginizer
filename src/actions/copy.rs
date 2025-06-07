@@ -8,6 +8,13 @@ pub struct CopyAction {
 
 impl Action for CopyAction {
     fn apply(&self, path: &Path) {
-        std::fs::copy(path, &self.destination).unwrap();
+        // copy to destination with some file hierarchy
+        let dest = self.destination.join(path);
+        println!("Copying {} to {}", path.display(), dest.display());
+        println!("parent: {}", dest.parent().unwrap().display());
+        if let Some(parent) = dest.parent() {
+            std::fs::create_dir_all(parent).unwrap();
+        }
+        std::fs::copy(path, &dest).unwrap();
     }
 }

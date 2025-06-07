@@ -10,3 +10,4 @@ rawloader = "0.37.1"
 sha2 = "0.10.9"
 walkdir = "2.5.0"
 globset = "0.4"
+clap = { version = "4.5.4", features = ["derive"] }

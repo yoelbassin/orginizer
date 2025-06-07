@@ -24,7 +24,7 @@ pub enum FilterKind {
     SkipSelf(SkipSelfFilter),
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq)]
 pub enum FilterKindType {
     FileName,
     FileSize,
