@@ -1,5 +1,6 @@
-use crate::utils::misc::path_matches_any_glob;
+use crate::{actions::verbose::VerboseAction, utils::misc::path_matches_any_glob};
 use globset::GlobSet;
+use std::any::Any;
 use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
 
@@ -77,6 +78,14 @@ pub fn find_duplicates(
     );
 }
 
+fn run_verbose_if_in_actions(actions: &Vec<Box<dyn Action>>, path: &Path) {
+    for action in actions {
+        if let Some(verbose_action) = action.as_ref().as_any().downcast_ref::<VerboseAction>() {
+            verbose_action.apply(path);
+        }
+    }
+}
+
 pub fn handle_reverse_duplicates(
     entry: &DirEntry,
     destination: &Path,
@@ -90,7 +99,8 @@ pub fn handle_reverse_duplicates(
         .filter_map(Result::ok)
         .filter(|dest_entry| dest_entry.file_type().is_file())
         .filter(|dest_entry| process_filter(dest_entry, filters_from_source));
-    for _ in walker_dest {
+    for duplicate in walker_dest {
+        run_verbose_if_in_actions(actions, duplicate.path());
         found = true;
         break;
     }

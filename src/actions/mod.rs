@@ -1,9 +1,11 @@
+use std::any::Any;
 use std::path::Path;
 
 use crate::actions::{copy::CopyAction, delete::DeleteAction, verbose::VerboseAction};
 
-pub trait Action {
+pub trait Action: Any + 'static {
     fn apply(&self, path: &Path);
+    fn as_any(&self) -> &dyn Any;
 }
 
 pub enum ActionKind {
@@ -19,6 +21,9 @@ impl Action for ActionKind {
             ActionKind::Delete(action) => action.apply(path),
             ActionKind::Verbose(action) => action.apply(path),
         }
+    }
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
 

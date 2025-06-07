@@ -5,7 +5,11 @@ use organizer::organizer::{create_filters_from_path, make_walker};
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 
-fn setup_and_get_progress_bar(reference: &std::path::PathBuf, recursive: bool, globset: &organizer::utils::misc::GlobSet) -> Arc<ProgressBar> {
+fn setup_and_get_progress_bar(
+    reference: &std::path::PathBuf,
+    recursive: bool,
+    globset: &organizer::utils::misc::GlobSet,
+) -> Arc<ProgressBar> {
     let file_count = count_files(reference, recursive, globset);
     Arc::new(create_progress_bar(file_count))
 }

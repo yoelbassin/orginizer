@@ -16,4 +16,7 @@ impl Action for CopyAction {
         }
         std::fs::copy(path, &dest).unwrap();
     }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
