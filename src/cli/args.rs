@@ -43,6 +43,10 @@ pub struct Cli {
     /// Reference folder (last positional argument)
     #[arg(required = true)]
     pub reference: PathBuf,
+
+    /// Perform actions on the source file if a duplicate is found (reverse mode)
+    #[arg(long, action = ArgAction::SetTrue)]
+    pub reverse: bool,
 }
 
 pub fn parse_filters(by: &str, skip_self: bool) -> Vec<FilterKindType> {

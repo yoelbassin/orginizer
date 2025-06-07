@@ -26,6 +26,7 @@ organizer [OPTIONS] <TARGETS>... <REFERENCE>
 - `-r, --recursive`  Scan directories recursively
 - `--dry-run`    Show what would be done without making changes
 - `--verbose`    Enable verbose output
+- `--reverse`    Perform actions on the source file if a duplicate is found in the destination (reverse mode)
 
 **Example:**
 ```sh
