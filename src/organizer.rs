@@ -1,6 +1,5 @@
 use crate::{actions::verbose::VerboseAction, utils::misc::path_matches_any_glob};
 use globset::GlobSet;
-use std::any::Any;
 use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
 
