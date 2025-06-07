@@ -1,6 +1,7 @@
 use globset::GlobSet;
 use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
+use crate::utils::misc::path_matches_any_glob;
 
 use crate::{
     actions::Action,
@@ -17,30 +18,38 @@ fn process_actions(entry: &DirEntry, actions: &Vec<Box<dyn Action>>) {
         .for_each(|action| action.apply(&entry.path()));
 }
 
-fn path_matches_any_glob<P: AsRef<std::path::Path>>(path: P, globset: &GlobSet) -> bool {
-    globset.is_match(path.as_ref())
-}
-
-pub fn search_files(
-    path: &Path,
-    filters: &Vec<Box<dyn Filter>>,
-    actions: &Vec<Box<dyn Action>>,
-    exclude: &GlobSet,
-) {
-    WalkDir::new(path)
-        .into_iter()
-        .filter_entry(|entry| !path_matches_any_glob(entry.path(), exclude))
-        .filter_map(Result::ok)
-        .filter(|entry| entry.file_type().is_file())
-        .filter(|entry| process_filter(entry, filters))
-        .for_each(|entry| process_actions(&entry, actions));
-}
-
 fn create_filters_from_path(path: &Path, filters: &Vec<FilterKindType>) -> Vec<Box<dyn Filter>> {
     filters
         .iter()
         .map(|filter| Box::new(FilterKind::from_path(*filter, path)) as Box<dyn Filter>)
         .collect()
+}
+
+fn make_walker<P: AsRef<std::path::Path>>(path: P, recursive: Option<bool>, exclude: &GlobSet) -> impl Iterator<Item = walkdir::Result<DirEntry>> {
+    let do_recursive = recursive.unwrap_or(true);
+    let walker = if do_recursive {
+        WalkDir::new(path)
+    } else {
+        WalkDir::new(path).max_depth(1)
+    };
+    walker
+        .into_iter()
+        .filter_entry(|entry| !path_matches_any_glob(entry.path(), exclude))
+}
+
+pub fn find(
+    path: &Path,
+    filters: &Vec<Box<dyn Filter>>,
+    actions: &Vec<Box<dyn Action>>,
+    exclude: &GlobSet,
+    recursive: Option<bool>,
+) {
+    let walker = make_walker(path, recursive, exclude);
+    walker
+        .filter_map(Result::ok)
+        .filter(|entry| entry.file_type().is_file())
+        .filter(|entry| process_filter(entry, filters))
+        .for_each(|entry| process_actions(&entry, actions));
 }
 
 pub fn find_duplicates(
@@ -49,7 +58,25 @@ pub fn find_duplicates(
     filters: &Vec<FilterKindType>,
     actions: &Vec<Box<dyn Action>>,
     exclude: &GlobSet,
+    recursive: Option<bool>,
 ) {
     let filters_from_source = create_filters_from_path(source, filters);
-    search_files(destination, &filters_from_source, actions, exclude);
+    find(destination, &filters_from_source, actions, exclude, recursive);
+}
+
+pub fn find_all_duplicates_in_folder(
+    source_folder: &Path,
+    destination: &Path,
+    filters: &Vec<FilterKindType>,
+    actions: &Vec<Box<dyn Action>>,
+    exclude: &GlobSet,
+    recursive: Option<bool>,
+) {
+    let walker = make_walker(source_folder, recursive, exclude)
+        .filter_map(Result::ok)
+        .filter(|entry| entry.file_type().is_file());
+    for entry in walker {
+        let filters_from_source = create_filters_from_path(entry.path(), filters);
+        find(destination, &filters_from_source, actions, exclude, recursive);
+    }
 }

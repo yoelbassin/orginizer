@@ -11,3 +11,7 @@ where
     }
     builder.build().unwrap()
 }
+
+pub fn path_matches_any_glob<P: AsRef<std::path::Path>>(path: P, globset: &GlobSet) -> bool {
+    globset.is_match(path.as_ref())
+}

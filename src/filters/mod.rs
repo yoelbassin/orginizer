@@ -5,6 +5,7 @@ use date_modified::DateModifiedFilter;
 use file_name::FileNameFilter;
 use file_size::FileSizeFilter;
 use image_content::ImageContentFilter;
+use skip_self::SkipSelfFilter;
 
 pub trait Filter {
     fn apply(&self, path: &Path) -> bool;
@@ -20,6 +21,7 @@ pub enum FilterKind {
     DateModified(DateModifiedFilter),
     DateCreated(DateCreatedFilter),
     ImageContent(ImageContentFilter),
+    SkipSelf(SkipSelfFilter),
 }
 
 #[derive(Copy, Clone)]
@@ -29,6 +31,7 @@ pub enum FilterKindType {
     DateModified,
     DateCreated,
     ImageContent,
+    SkipSelf,
 }
 
 impl FilterKind {
@@ -39,6 +42,7 @@ impl FilterKind {
             FilterKind::DateModified(f) => f,
             FilterKind::DateCreated(f) => f,
             FilterKind::ImageContent(f) => f,
+            FilterKind::SkipSelf(f) => f,
         }
     }
 
@@ -55,6 +59,7 @@ impl FilterKind {
             FilterKindType::ImageContent => {
                 FilterKind::ImageContent(ImageContentFilter::new_from_file(path))
             }
+            FilterKindType::SkipSelf => FilterKind::SkipSelf(SkipSelfFilter::new_from_file(path)),
         }
     }
 }
@@ -70,3 +75,4 @@ pub mod date_modified;
 pub mod file_name;
 pub mod file_size;
 pub mod image_content;
+pub mod skip_self;
