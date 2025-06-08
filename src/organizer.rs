@@ -9,7 +9,12 @@ use crate::{
 };
 
 pub fn process_filter(dir_entry: &DirEntry, filters: &Vec<Box<dyn Filter>>) -> bool {
-    filters.iter().all(|filter| filter.apply(&dir_entry.path()))
+    for filter in filters {
+        if !filter.apply(&dir_entry.path()) {
+            return false;
+        }
+    }
+    true
 }
 
 pub fn process_actions(entry: &DirEntry, actions: &Vec<Box<dyn Action>>) {
@@ -30,6 +35,7 @@ pub fn make_walker<P: AsRef<std::path::Path>>(
         WalkDir::new(path).max_depth(1)
     };
     walker
+        .sort_by(|a, b| a.path().cmp(b.path()))
         .into_iter()
         .filter_entry(|entry| !path_matches_any_glob(entry.path(), exclude))
 }
@@ -67,6 +73,9 @@ pub fn find_duplicates(
     exclude: &GlobSet,
     recursive: Option<bool>,
 ) {
+    if !source.exists() {
+        return;
+    }
     let filters_from_source = create_filters_from_path(source, filters);
     find(
         destination,

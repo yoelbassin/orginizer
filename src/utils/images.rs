@@ -12,10 +12,15 @@ pub fn get_content_hash(path: &Path) -> String {
     let content = match extension {
         Some(ext) if RAW_EXTENSIONS.contains(&ext.as_str()) => get_raw_content(path),
         Some(ext) if JPEG_EXTENSIONS.contains(&ext.as_str()) => get_jpeg_content(path),
-        _ => Vec::new(),
+        _ => get_file_content(path),
     };
     let hash = hash_bytes(&content);
     hash
+}
+
+fn get_file_content(path: &Path) -> Vec<u8> {
+    let content = std::fs::read(path).unwrap();
+    content
 }
 
 fn hash_bytes(bytes: &[u8]) -> String {

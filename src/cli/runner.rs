@@ -41,6 +41,10 @@ fn process_target(
     for entry in walker {
         check_interrupted(running, Some(pb));
         pb.set_message(entry.path().display().to_string());
+        if !entry.path().exists() {
+            pb.inc(1);
+            continue;
+        }
         let filters_from_source = create_filters_from_path(entry.path(), filters);
         if reverse {
             organizer::organizer::handle_reverse_duplicates(
