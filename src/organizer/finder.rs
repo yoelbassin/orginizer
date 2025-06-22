@@ -3,6 +3,7 @@ use std::{
     sync::Arc,
 };
 
+use either::Either;
 use walkdir::{DirEntry, WalkDir};
 
 use crate::{
@@ -39,18 +40,26 @@ pub fn finder(
         .map(|entry| entry.path().to_path_buf())
 }
 
+fn empty_iter() -> impl Iterator<Item = PathBuf> {
+    std::iter::empty()
+}
+
 pub fn duplicate_finder(
     path: &Path,
     reference: PathBuf,
     recursive: bool,
     filter_configs: &[(FilterKindType, Box<dyn FilterConfig>)],
 ) -> impl Iterator<Item = PathBuf> {
+    if !reference.exists() {
+        return Either::Left(empty_iter());
+    }
+
     let filters: Vec<Arc<dyn Filter>> = filters_factory(filter_configs, &reference)
         .into_iter()
         .map(Arc::from)
         .collect();
 
-    finder(path, recursive, filters)
+    Either::Right(finder(path, recursive, filters))
 }
 
 pub fn duplicates_finder(
