@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     filters::{Filter, FilterConfig, FromFile},
-    utils::images::get_content_hash,
+    utils::{cache::cache_get_or_insert_with, images::get_content_hash},
 };
 
 pub struct ImageContentFilter {
@@ -13,17 +13,23 @@ pub struct ImageContentFilter {
     content_hash: Mutex<Option<String>>,
 }
 
+fn get_cache_or_insert_image_content_hash(path: &Path) -> String {
+    cache_get_or_insert_with(path.to_str().unwrap(), || get_content_hash(path)).unwrap()
+}
+
 impl ImageContentFilter {
     fn get_hash(&self) -> String {
-        let mut cached = self.content_hash.lock().unwrap();
-        let hash = cached.get_or_insert_with(|| get_content_hash(&self.path));
+        let mut computed: std::sync::MutexGuard<'_, Option<String>> =
+            self.content_hash.lock().unwrap();
+        let hash =
+            computed.get_or_insert_with(|| get_cache_or_insert_image_content_hash(&self.path));
         hash.clone()
     }
 }
 
 impl Filter for ImageContentFilter {
     fn apply(&self, path: &Path) -> bool {
-        get_content_hash(path) == self.get_hash()
+        get_cache_or_insert_image_content_hash(path) == self.get_hash()
     }
 }
 
