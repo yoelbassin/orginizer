@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 
 use crate::actions::Action;
 
+#[derive(Clone)]
 pub struct CopyAction {
     pub destination: PathBuf,
 }
@@ -15,8 +16,5 @@ impl Action for CopyAction {
             std::fs::create_dir_all(parent).unwrap();
         }
         std::fs::copy(path, &dest).unwrap();
-    }
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
     }
 }

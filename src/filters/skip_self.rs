@@ -1,4 +1,4 @@
-use crate::filters::{Filter, FromFile};
+use crate::filters::{Filter, FilterConfig, FromFile};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -16,7 +16,7 @@ impl Filter for SkipSelfFilter {
 }
 
 impl FromFile for SkipSelfFilter {
-    fn new_from_file(path: &Path) -> Self {
+    fn new_from_file(path: &Path, _: &dyn FilterConfig) -> Self {
         let reference_path = fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
         Self { reference_path }
     }

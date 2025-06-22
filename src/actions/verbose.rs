@@ -3,6 +3,7 @@ use indicatif::ProgressBar;
 use std::path::Path;
 use std::sync::Arc;
 
+#[derive(Clone)]
 pub struct VerboseAction {
     pub progress: Option<Arc<ProgressBar>>,
 }
@@ -15,8 +16,5 @@ impl Action for VerboseAction {
         } else {
             println!("{}", msg);
         }
-    }
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
     }
 }

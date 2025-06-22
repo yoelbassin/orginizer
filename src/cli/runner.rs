@@ -1,94 +1,75 @@
-use super::args::{Cli, build_exclude_patterns, parse_actions, parse_filters};
-use super::progress::{count_files, create_progress_bar, setup_ctrlc_flag};
-use indicatif::ProgressBar;
-use organizer::organizer::{create_filters_from_path, make_walker};
-use std::sync::Arc;
-use std::sync::atomic::AtomicBool;
+use super::args::Cli;
+use crate::actions::{
+    Action, ActionKind, copy::CopyAction, delete::DeleteAction, verbose::VerboseAction,
+};
+use crate::filters::{FilterConfig, FilterKindType};
+use crate::organizer::actions::actions_pipeline;
+use crate::organizer::finder::duplicates_finder;
+use std::path::PathBuf;
 
-fn setup_and_get_progress_bar(
-    reference: &std::path::PathBuf,
-    recursive: bool,
-    globset: &organizer::utils::misc::GlobSet,
-) -> Arc<ProgressBar> {
-    let file_count = count_files(reference, recursive, globset);
-    Arc::new(create_progress_bar(file_count))
-}
+#[derive(Clone)]
+struct DummyConfig;
+impl FilterConfig for DummyConfig {}
 
-fn check_interrupted(running: &Arc<AtomicBool>, pb: Option<&ProgressBar>) {
-    if !running.load(std::sync::atomic::Ordering::SeqCst) {
-        if let Some(pb) = pb {
-            pb.finish_and_clear();
-        }
-        eprintln!("Interrupted by user");
-        std::process::exit(130);
+fn parse_filter_kind(filter: &str) -> Option<FilterKindType> {
+    match filter.to_uppercase().as_str() {
+        "NAME" => Some(FilterKindType::FileName),
+        "SIZE" => Some(FilterKindType::FileSize),
+        "DATE_MODIFIED" => Some(FilterKindType::DateModified),
+        "DATE_CREATED" => Some(FilterKindType::DateCreated),
+        "IMAGE_CONTENT" => Some(FilterKindType::ImageContent),
+        "SKIP_SELF" => Some(FilterKindType::SkipSelf),
+        _ => None,
     }
 }
 
-fn process_target(
-    reference: &std::path::Path,
-    target: &std::path::Path,
-    filters: &Vec<organizer::filters::FilterKindType>,
-    actions: &Vec<Box<dyn organizer::actions::Action>>,
-    globset: &organizer::utils::misc::GlobSet,
-    recursive: Option<bool>,
-    pb: &Arc<ProgressBar>,
-    running: &Arc<AtomicBool>,
-    reverse: bool,
-) {
-    let walker = make_walker(reference, recursive, globset)
-        .filter_map(Result::ok)
-        .filter(|entry| entry.file_type().is_file());
-    for entry in walker {
-        check_interrupted(running, Some(pb));
-        pb.set_message(entry.path().display().to_string());
-        if !entry.path().exists() {
-            pb.inc(1);
-            continue;
+fn parse_action_kind(action: &str) -> Option<ActionKind> {
+    if action.to_uppercase().starts_with("COPY=") {
+        let dest = action[5..].trim();
+        Some(ActionKind::Copy(CopyAction {
+            destination: PathBuf::from(dest),
+        }))
+    } else {
+        match action.to_uppercase().as_str() {
+            "DELETE" => Some(ActionKind::Delete(DeleteAction {})),
+            "VERBOSE" => Some(ActionKind::Verbose(VerboseAction { progress: None })),
+            _ => None,
         }
-        let filters_from_source = create_filters_from_path(entry.path(), filters);
-        if reverse {
-            organizer::organizer::handle_reverse_duplicates(
-                &entry,
-                target,
-                &filters_from_source,
-                actions,
-                globset,
-                recursive,
-            );
-        } else {
-            organizer::organizer::handle_normal_duplicates(
-                target,
-                &filters_from_source,
-                actions,
-                globset,
-                recursive,
-            );
-        }
-        pb.inc(1);
     }
 }
 
 pub fn run_organizer(cli: &Cli) {
-    let running = setup_ctrlc_flag();
-    let filters = parse_filters(&cli.by, cli.skip_self);
-    let exclude_patterns = build_exclude_patterns(&cli.exclude, &cli.targets);
-    let globset = organizer::utils::misc::make_globset(exclude_patterns.clone());
-    let recursive = Some(cli.recursive);
-    let pb = setup_and_get_progress_bar(&cli.reference, cli.recursive, &globset);
-    let actions = parse_actions(&cli.action, cli.verbose, cli.dry_run, Some(pb.clone()));
+    // Parse filters from CLI
+    let filters: Vec<FilterKindType> = cli
+        .by
+        .split(',')
+        .filter_map(|s| parse_filter_kind(s.trim()))
+        .collect();
+
+    // Parse actions from CLI
+    let actions: Vec<ActionKind> = cli
+        .action
+        .split(',')
+        .filter_map(|s| parse_action_kind(s.trim()))
+        .collect();
+
+    let reference = PathBuf::from(&cli.reference);
+    let boxed_actions: Vec<Box<dyn Action>> = actions
+        .iter()
+        .cloned()
+        .map(|a| Box::new(a) as Box<dyn Action>)
+        .collect();
+
     for target in &cli.targets {
-        process_target(
-            &cli.reference,
-            target,
-            &filters,
-            &actions,
-            &globset,
-            recursive,
-            &pb,
-            &running,
-            cli.reverse,
-        );
-        check_interrupted(&running, Some(&pb));
+        let target_path = PathBuf::from(target);
+        let filter_configs: Vec<(FilterKindType, Box<dyn FilterConfig>)> = filters
+            .iter()
+            .map(|&fk| (fk, Box::new(DummyConfig) as Box<dyn FilterConfig>))
+            .collect();
+        let duplicates =
+            duplicates_finder(&target_path, &reference, cli.recursive, &filter_configs);
+        for duplicate in duplicates {
+            actions_pipeline(&duplicate, &boxed_actions);
+        }
     }
-    pb.finish_with_message("done");
 }

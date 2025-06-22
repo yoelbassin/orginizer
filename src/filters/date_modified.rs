@@ -1,6 +1,6 @@
 use std::{path::Path, time::SystemTime};
 
-use crate::filters::{Filter, FromFile};
+use crate::filters::{Filter, FilterConfig, FromFile};
 
 pub struct DateModifiedFilter {
     date: SystemTime,
@@ -13,7 +13,7 @@ impl Filter for DateModifiedFilter {
 }
 
 impl FromFile for DateModifiedFilter {
-    fn new_from_file(path: &Path) -> Self {
+    fn new_from_file(path: &Path, _: &dyn FilterConfig) -> Self {
         let date = path.metadata().unwrap().modified().unwrap();
         Self { date }
     }
