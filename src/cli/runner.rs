@@ -2,6 +2,7 @@ use super::args::Cli;
 use crate::actions::{
     Action, ActionKind, copy::CopyAction, delete::DeleteAction, verbose::VerboseAction,
 };
+use crate::filters::file_prefix::FilePrefixFilterConfig;
 use crate::filters::{FilterConfig, FilterKindType};
 use crate::organizer::actions::actions_pipeline;
 use crate::organizer::finder::duplicates_finder;
@@ -11,15 +12,33 @@ use std::path::PathBuf;
 struct DummyConfig;
 impl FilterConfig for DummyConfig {}
 
-fn parse_filter_kind(filter: &str) -> Option<FilterKindType> {
-    match filter.to_uppercase().as_str() {
-        "NAME" => Some(FilterKindType::FileName),
-        "SIZE" => Some(FilterKindType::FileSize),
-        "DATE_MODIFIED" => Some(FilterKindType::DateModified),
-        "DATE_CREATED" => Some(FilterKindType::DateCreated),
-        "IMAGE_CONTENT" => Some(FilterKindType::ImageContent),
-        "SKIP_SELF" => Some(FilterKindType::SkipSelf),
-        _ => None,
+fn split_string_by_equal_sign(s: &str) -> (String, Option<String>) {
+    let parts: Vec<&str> = s.split('=').collect();
+    if parts.len() == 2 {
+        (parts[0].to_string(), Some(parts[1].to_string()))
+    } else {
+        (s.to_string(), None)
+    }
+}
+
+fn parse_filter_kind(filter: &str) -> Option<(FilterKindType, Box<dyn FilterConfig>)> {
+    let (filter_type, filter_config) = split_string_by_equal_sign(filter);
+
+    match filter_type.to_uppercase().as_str() {
+        "FILE_PREFIX" => {
+            let length = filter_config.unwrap().parse::<usize>().unwrap();
+            Some((
+                FilterKindType::FilePrefix,
+                Box::new(FilePrefixFilterConfig { length }),
+            ))
+        }
+        "NAME" => Some((FilterKindType::FileName, Box::new(DummyConfig))),
+        "SIZE" => Some((FilterKindType::FileSize, Box::new(DummyConfig))),
+        "DATE_MODIFIED" => Some((FilterKindType::DateModified, Box::new(DummyConfig))),
+        "DATE_CREATED" => Some((FilterKindType::DateCreated, Box::new(DummyConfig))),
+        "IMAGE_CONTENT" => Some((FilterKindType::ImageContent, Box::new(DummyConfig))),
+        "SKIP_SELF" => Some((FilterKindType::SkipSelf, Box::new(DummyConfig))),
+        _ => panic!("Unknown filter: {}", filter_type),
     }
 }
 
@@ -40,7 +59,7 @@ fn parse_action_kind(action: &str) -> Option<ActionKind> {
 
 pub fn run_organizer(cli: &Cli) {
     // Parse filters from CLI
-    let filters: Vec<FilterKindType> = cli
+    let filters: Vec<(FilterKindType, Box<dyn FilterConfig>)> = cli
         .by
         .split(',')
         .filter_map(|s| parse_filter_kind(s.trim()))
@@ -62,12 +81,7 @@ pub fn run_organizer(cli: &Cli) {
 
     for target in &cli.targets {
         let target_path = PathBuf::from(target);
-        let filter_configs: Vec<(FilterKindType, Box<dyn FilterConfig>)> = filters
-            .iter()
-            .map(|&fk| (fk, Box::new(DummyConfig) as Box<dyn FilterConfig>))
-            .collect();
-        let duplicates =
-            duplicates_finder(&target_path, &reference, cli.recursive, &filter_configs);
+        let duplicates = duplicates_finder(&target_path, &reference, cli.recursive, &filters);
         for duplicate in duplicates {
             actions_pipeline(&duplicate, &boxed_actions);
         }

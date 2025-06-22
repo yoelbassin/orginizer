@@ -7,6 +7,8 @@ use file_size::FileSizeFilter;
 use image_content::ImageContentFilter;
 use skip_self::SkipSelfFilter;
 
+use crate::filters::file_prefix::FilePrefixFilter;
+
 pub trait FilterConfig: Any + Send + Sync {}
 
 impl dyn FilterConfig {
@@ -33,6 +35,7 @@ define_filters!(
     DateCreated => DateCreatedFilter,
     ImageContent => ImageContentFilter,
     SkipSelf => SkipSelfFilter,
+    FilePrefix => FilePrefixFilter,
 );
 
 pub mod date_created;
