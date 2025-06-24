@@ -5,8 +5,10 @@ use crate::actions::{
 use crate::filters::file_prefix::FilePrefixFilterConfig;
 use crate::filters::{FilterConfig, FilterKindType};
 use crate::organizer::actions::actions_pipeline;
-use crate::organizer::finder::duplicates_finder;
+use crate::organizer::finder::{duplicates_finder, count_reference_files};
 use std::path::PathBuf;
+use indicatif::{ProgressBar, ProgressStyle};
+use std::sync::Arc;
 
 #[derive(Clone)]
 struct DummyConfig;
@@ -42,7 +44,7 @@ fn parse_filter_kind(filter: &str) -> Option<(FilterKindType, Box<dyn FilterConf
     }
 }
 
-fn parse_action_kind(action: &str) -> Option<ActionKind> {
+fn parse_action_kind(action: &str, progress: Option<Arc<ProgressBar>>) -> Option<ActionKind> {
     if action.to_uppercase().starts_with("COPY=") {
         let dest = action[5..].trim();
         Some(ActionKind::Copy(CopyAction {
@@ -51,7 +53,7 @@ fn parse_action_kind(action: &str) -> Option<ActionKind> {
     } else {
         match action.to_uppercase().as_str() {
             "DELETE" => Some(ActionKind::Delete(DeleteAction {})),
-            "VERBOSE" => Some(ActionKind::Verbose(VerboseAction { progress: None })),
+            "VERBOSE" => Some(ActionKind::Verbose(VerboseAction { progress: progress.clone() })),
             _ => panic!("Unknown action: {}", action),
         }
     }
@@ -65,25 +67,34 @@ pub fn run_organizer(cli: &Cli) {
         .filter_map(|s| parse_filter_kind(s.trim()))
         .collect();
 
-    // Parse actions from CLI
+    let reference = PathBuf::from(&cli.reference);
+    let target_paths: Vec<PathBuf> = cli.targets.iter().map(|t| PathBuf::from(t)).collect();
+    let reference_file_count = count_reference_files(&reference, cli.recursive);
+    let pb = Arc::new(ProgressBar::new(reference_file_count as u64));
+    pb.set_style(ProgressStyle::with_template("[{elapsed_precise}] [{bar:40.cyan/blue}] {pos:>7}/{len:7} {percent:>3}% | {msg}").unwrap());
+
+    // Parse actions from CLI, passing progress bar to VerboseAction
     let actions: Vec<ActionKind> = cli
         .action
         .split(',')
-        .filter_map(|s| parse_action_kind(s.trim()))
+        .filter_map(|s| parse_action_kind(s.trim(), Some(pb.clone())))
         .collect();
 
-    let reference = PathBuf::from(&cli.reference);
     let boxed_actions: Vec<Box<dyn Action>> = actions
         .iter()
         .cloned()
         .map(|a| Box::new(a) as Box<dyn Action>)
         .collect();
 
-    for target in &cli.targets {
-        let target_path = PathBuf::from(target);
-        let duplicates = duplicates_finder(&target_path, &reference, cli.recursive, &filters);
-        for duplicate in duplicates {
-            actions_pipeline(&duplicate, &boxed_actions);
+    for target_path in target_paths {
+        let duplicates_iter = duplicates_finder(&target_path, &reference, cli.recursive, &filters);
+        for (i, (reference_file, duplicates)) in duplicates_iter.enumerate() {
+            pb.set_message(format!("Checking: {}", reference_file.display()));
+            pb.set_position((i + 1) as u64);
+            for duplicate in duplicates {
+                actions_pipeline(&duplicate, &boxed_actions);
+            }
         }
     }
+    pb.finish_with_message("Done");
 }

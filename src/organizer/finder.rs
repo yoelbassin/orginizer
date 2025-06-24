@@ -71,13 +71,21 @@ pub fn duplicates_finder(
     reference: &PathBuf,
     recursive: bool,
     filter_configs: &[(FilterKindType, Box<dyn FilterConfig>)],
-) -> impl Iterator<Item = PathBuf> {
+) -> impl Iterator<Item = (PathBuf, Vec<PathBuf>)> {
     let walker = make_walker(reference, recursive);
     walker
         .filter_map(Result::ok)
         .filter(|entry| entry.file_type().is_file())
-        .flat_map(move |entry| {
+        .map(move |entry| {
             let reference_path = entry.path().to_path_buf();
-            duplicate_finder(path, reference_path, recursive, filter_configs)
+            let duplicates: Vec<PathBuf> = duplicate_finder(path, reference_path.clone(), recursive, filter_configs).collect();
+            (reference_path, duplicates)
         })
+}
+
+pub fn count_reference_files(reference: &PathBuf, recursive: bool) -> usize {
+    make_walker(reference, recursive)
+        .filter_map(Result::ok)
+        .filter(|entry| entry.file_type().is_file())
+        .count()
 }
