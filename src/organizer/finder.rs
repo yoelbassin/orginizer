@@ -15,6 +15,10 @@ fn is_file(entry: &DirEntry) -> bool {
     entry.file_type().is_file()
 }
 
+fn exists(entry: &DirEntry) -> bool {
+    entry.path().exists()
+}
+
 fn make_walker<P: AsRef<std::path::Path>>(
     path: P,
     recursive: bool,
@@ -35,7 +39,7 @@ pub fn finder(
     let walker = make_walker(path, recursive);
     walker
         .filter_map(Result::ok)
-        .filter(|entry| is_file(entry))
+        .filter(|entry| is_file(entry) && exists(entry))
         .filter(move |entry| filters_pipeline(entry.path(), &filters))
         .map(|entry| entry.path().to_path_buf())
 }

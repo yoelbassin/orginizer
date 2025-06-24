@@ -10,7 +10,7 @@ impl Filter for SkipSelfFilter {
     fn apply(&self, path: &Path) -> bool {
         match fs::canonicalize(path) {
             Ok(abs_path) => abs_path != self.reference_path,
-            Err(_) => true, // If we can't canonicalize, don't skip
+            Err(_) => panic!("Can't canonicalize path: {}", path.display()),
         }
     }
 }

@@ -52,7 +52,7 @@ fn parse_action_kind(action: &str) -> Option<ActionKind> {
         match action.to_uppercase().as_str() {
             "DELETE" => Some(ActionKind::Delete(DeleteAction {})),
             "VERBOSE" => Some(ActionKind::Verbose(VerboseAction { progress: None })),
-            _ => None,
+            _ => panic!("Unknown action: {}", action),
         }
     }
 }
