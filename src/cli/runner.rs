@@ -105,7 +105,7 @@ pub fn run_organizer(cli: &Cli) {
         for (i, (reference_file, duplicates)) in duplicates_iter.enumerate() {
             pb.set_message(format!("Checking: {}", reference_file.display()));
             pb.set_position((i + 1) as u64);
-            if cli.reference_action {
+            if cli.reference_action && !duplicates.is_empty() {
                 actions_pipeline(&reference_file, &boxed_actions);
             } else {
                 for duplicate in duplicates {
