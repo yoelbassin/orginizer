@@ -26,6 +26,7 @@ organizer [OPTIONS] <TARGETS>... <REFERENCE>
 - `--by <BY>`           Filters to match by (default: NAME,SIZE,IMAGE_CONTENT,SKIP_SELF)
 - `--action <ACTION>`   Actions to perform: VERBOSE, DELETE, COPY=/path (default: VERBOSE)
 - `-r, --recursive`     Scan directories recursively
+- `--reference_action`  Perform action on reference instead of duplicates
 - `-h, --help`          Print help
 - `-V, --version`       Print version
 

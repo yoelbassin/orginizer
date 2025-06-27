@@ -15,6 +15,10 @@ pub struct Cli {
     #[arg(short, long, default_value_t = false)]
     pub recursive: bool,
 
+    /// Perform action on reference instead of duplicates if duplicates are found
+    #[arg(long, default_value_t = false)]
+    pub reference_action: bool,
+
     /// Target directories/files
     #[arg(required = true)]
     pub targets: Vec<String>,
