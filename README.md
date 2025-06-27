@@ -26,7 +26,7 @@ organizer [OPTIONS] <TARGETS>... <REFERENCE>
 - `--by <BY>`           Filters to match by (default: NAME,SIZE,IMAGE_CONTENT,SKIP_SELF)
 - `--action <ACTION>`   Actions to perform: VERBOSE, DELETE, COPY=/path (default: VERBOSE)
 - `-r, --recursive`     Scan directories recursively
-- `--reference_action`  Perform action on reference instead of duplicates
+- `--mode <MODE>`       Mode of operation for actions (default DUPLICATES)
 - `-h, --help`          Print help
 - `-V, --version`       Print version
 
@@ -42,6 +42,11 @@ organizer [OPTIONS] <TARGETS>... <REFERENCE>
 - `VERBOSE` - Print found duplicates to console
 - `DELETE` - Delete duplicate files
 - `COPY=/path` - Copy duplicate files to specified directory
+
+**Available Modes**
+- `DUPLICATES` - Perform actions on found duplicates of the reference
+- `REFERENCE` - Perform action on the reference if duplicates are found
+- `UNIQ_REFERENCE` - Perform action on the reference if duplicates are not found
 
 **Example:**
 ```sh

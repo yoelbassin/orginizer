@@ -11,6 +11,12 @@ use indicatif::{ProgressBar, ProgressStyle};
 use std::path::PathBuf;
 use std::sync::Arc;
 
+enum Mode {
+    Duplicates,
+    Reference,
+    UniqueReference,
+}
+
 #[derive(Clone)]
 struct DummyConfig;
 impl FilterConfig for DummyConfig {}
@@ -51,6 +57,15 @@ fn parse_filter_kind(filter: &str) -> Option<(FilterKindType, Box<dyn FilterConf
     }
 }
 
+fn parse_mode(mode: &str) -> Mode {
+    match mode.to_uppercase().as_str() {
+        "DUPLICATES" => Mode::Duplicates,
+        "REFERENCE" => Mode::Reference,
+        "UNIQUE_REFERENCE" => Mode::UniqueReference,
+        _ => panic!("Unknown mode: {}", mode),
+    }
+}
+
 fn parse_action_kind(action: &str, progress: Option<Arc<ProgressBar>>) -> Option<ActionKind> {
     if action.to_uppercase().starts_with("COPY=") {
         let dest = action[5..].trim();
@@ -64,6 +79,26 @@ fn parse_action_kind(action: &str, progress: Option<Arc<ProgressBar>>) -> Option
                 progress: progress.clone(),
             })),
             _ => panic!("Unknown action: {}", action),
+        }
+    }
+}
+
+fn perform_action(mode: &Mode, reference_file: &PathBuf, duplicates: &Vec<PathBuf>, actions: &Vec<Box<dyn Action>>) {
+    match mode {
+        Mode::Duplicates => {
+            for duplicate in duplicates {
+                actions_pipeline(duplicate, actions);
+            }
+        }
+        Mode::Reference => {
+            if !duplicates.is_empty() {
+                actions_pipeline(reference_file, actions);
+            }
+        }
+        Mode::UniqueReference => {
+            if duplicates.is_empty() {
+                actions_pipeline(reference_file, actions);
+            }
         }
     }
 }
@@ -100,18 +135,14 @@ pub fn run_organizer(cli: &Cli) {
         .map(|a| Box::new(a) as Box<dyn Action>)
         .collect();
 
+    let mode = parse_mode(&cli.mode);
+
     for target_path in target_paths {
         let duplicates_iter = duplicates_finder(&target_path, &reference, cli.recursive, &filters);
         for (i, (reference_file, duplicates)) in duplicates_iter.enumerate() {
             pb.set_message(format!("Checking: {}", reference_file.display()));
             pb.set_position((i + 1) as u64);
-            if cli.reference_action && !duplicates.is_empty() {
-                actions_pipeline(&reference_file, &boxed_actions);
-            } else {
-                for duplicate in duplicates {
-                    actions_pipeline(&duplicate, &boxed_actions);
-                }
-            }
+            perform_action(&mode, &reference_file, &duplicates, &boxed_actions);
         }
     }
     pb.finish_with_message("Done");

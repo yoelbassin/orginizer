@@ -10,7 +10,7 @@ pub struct VerboseAction {
 
 impl Action for VerboseAction {
     fn apply(&self, path: &Path) {
-        let msg = format!("Found duplicate: {}", path.display());
+        let msg = format!("Processing: {}", path.display());
         if let Some(pb) = &self.progress {
             pb.println(msg);
         } else {
