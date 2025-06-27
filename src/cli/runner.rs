@@ -83,7 +83,12 @@ fn parse_action_kind(action: &str, progress: Option<Arc<ProgressBar>>) -> Option
     }
 }
 
-fn perform_action(mode: &Mode, reference_file: &PathBuf, duplicates: &Vec<PathBuf>, actions: &Vec<Box<dyn Action>>) {
+fn perform_action(
+    mode: &Mode,
+    reference_file: &PathBuf,
+    duplicates: &Vec<PathBuf>,
+    actions: &Vec<Box<dyn Action>>,
+) {
     match mode {
         Mode::Duplicates => {
             for duplicate in duplicates {

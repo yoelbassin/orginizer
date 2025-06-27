@@ -46,7 +46,7 @@ organizer [OPTIONS] <TARGETS>... <REFERENCE>
 **Available Modes**
 - `DUPLICATES` - Perform actions on found duplicates of the reference
 - `REFERENCE` - Perform action on the reference if duplicates are found
-- `UNIQ_REFERENCE` - Perform action on the reference if duplicates are not found
+- `UNIQUES_REFERENCE` - Perform action on the reference if duplicates are not found
 
 **Example:**
 ```sh
