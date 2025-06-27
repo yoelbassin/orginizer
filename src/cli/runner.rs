@@ -3,11 +3,12 @@ use crate::actions::{
     Action, ActionKind, copy::CopyAction, delete::DeleteAction, verbose::VerboseAction,
 };
 use crate::filters::file_prefix::FilePrefixFilterConfig;
+use crate::filters::file_size::FileSizeFilterConfig;
 use crate::filters::{FilterConfig, FilterKindType};
 use crate::organizer::actions::actions_pipeline;
-use crate::organizer::finder::{duplicates_finder, count_reference_files};
-use std::path::PathBuf;
+use crate::organizer::finder::{count_reference_files, duplicates_finder};
 use indicatif::{ProgressBar, ProgressStyle};
+use std::path::PathBuf;
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -35,7 +36,13 @@ fn parse_filter_kind(filter: &str) -> Option<(FilterKindType, Box<dyn FilterConf
             ))
         }
         "NAME" => Some((FilterKindType::FileName, Box::new(DummyConfig))),
-        "SIZE" => Some((FilterKindType::FileSize, Box::new(DummyConfig))),
+        "SIZE" => {
+            let proximity = filter_config.unwrap().parse::<u64>().unwrap();
+            Some((
+                FilterKindType::FileSize,
+                Box::new(FileSizeFilterConfig { proximity }),
+            ))
+        }
         "DATE_MODIFIED" => Some((FilterKindType::DateModified, Box::new(DummyConfig))),
         "DATE_CREATED" => Some((FilterKindType::DateCreated, Box::new(DummyConfig))),
         "IMAGE_CONTENT" => Some((FilterKindType::ImageContent, Box::new(DummyConfig))),
@@ -53,7 +60,9 @@ fn parse_action_kind(action: &str, progress: Option<Arc<ProgressBar>>) -> Option
     } else {
         match action.to_uppercase().as_str() {
             "DELETE" => Some(ActionKind::Delete(DeleteAction {})),
-            "VERBOSE" => Some(ActionKind::Verbose(VerboseAction { progress: progress.clone() })),
+            "VERBOSE" => Some(ActionKind::Verbose(VerboseAction {
+                progress: progress.clone(),
+            })),
             _ => panic!("Unknown action: {}", action),
         }
     }
@@ -71,7 +80,12 @@ pub fn run_organizer(cli: &Cli) {
     let target_paths: Vec<PathBuf> = cli.targets.iter().map(|t| PathBuf::from(t)).collect();
     let reference_file_count = count_reference_files(&reference, cli.recursive);
     let pb = Arc::new(ProgressBar::new(reference_file_count as u64));
-    pb.set_style(ProgressStyle::with_template("[{elapsed_precise}] [{bar:40.cyan/blue}] {pos:>7}/{len:7} {percent:>3}% | {msg}").unwrap());
+    pb.set_style(
+        ProgressStyle::with_template(
+            "[{elapsed_precise}] [{bar:40.cyan/blue}] {pos:>7}/{len:7} {percent:>3}% | {msg}",
+        )
+        .unwrap(),
+    );
 
     // Parse actions from CLI, passing progress bar to VerboseAction
     let actions: Vec<ActionKind> = cli

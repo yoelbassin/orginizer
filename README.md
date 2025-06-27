@@ -47,3 +47,5 @@ organizer [OPTIONS] <TARGETS>... <REFERENCE>
 organizer --by NAME,SIZE --action VERBOSE ./photos ./backup ./reference
 ```
 
+## TODO
+- [ ] Improve performance of image comparison

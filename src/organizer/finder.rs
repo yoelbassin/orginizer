@@ -78,7 +78,8 @@ pub fn duplicates_finder(
         .filter(|entry| entry.file_type().is_file())
         .map(move |entry| {
             let reference_path = entry.path().to_path_buf();
-            let duplicates: Vec<PathBuf> = duplicate_finder(path, reference_path.clone(), recursive, filter_configs).collect();
+            let duplicates: Vec<PathBuf> =
+                duplicate_finder(path, reference_path.clone(), recursive, filter_configs).collect();
             (reference_path, duplicates)
         })
 }
