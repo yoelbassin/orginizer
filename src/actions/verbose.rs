@@ -1,20 +1,12 @@
 use crate::actions::Action;
-use indicatif::ProgressBar;
 use std::path::Path;
-use std::sync::Arc;
 
 #[derive(Clone)]
-pub struct VerboseAction {
-    pub progress: Option<Arc<ProgressBar>>,
-}
+pub struct VerboseAction {}
 
 impl Action for VerboseAction {
     fn apply(&self, path: &Path) {
         let msg = format!("Processing: {}", path.display());
-        if let Some(pb) = &self.progress {
-            pb.println(msg);
-        } else {
-            println!("{}", msg);
-        }
+        println!("{}", msg);
     }
 }

@@ -2,9 +2,7 @@ use crate::actions::{
     Action, ActionKind, copy::CopyAction, delete::DeleteAction, verbose::VerboseAction,
 };
 use crate::filters::FilterConfig;
-use indicatif::ProgressBar;
 use std::path::PathBuf;
-use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct DummyConfig;
@@ -26,7 +24,7 @@ pub fn split_string_by_equal_sign(s: &str) -> (String, Option<String>) {
     }
 }
 
-fn parse_action_kind(action: &str, progress: Option<Arc<ProgressBar>>) -> Option<ActionKind> {
+fn parse_action_kind(action: &str) -> Option<ActionKind> {
     if action.to_uppercase().starts_with("COPY=") {
         let dest = action[5..].trim();
         Some(ActionKind::Copy(CopyAction {
@@ -35,18 +33,16 @@ fn parse_action_kind(action: &str, progress: Option<Arc<ProgressBar>>) -> Option
     } else {
         match action.to_uppercase().as_str() {
             "DELETE" => Some(ActionKind::Delete(DeleteAction {})),
-            "VERBOSE" => Some(ActionKind::Verbose(VerboseAction {
-                progress: progress.clone(),
-            })),
+            "VERBOSE" => Some(ActionKind::Verbose(VerboseAction {})),
             _ => panic!("Unknown action: {}", action),
         }
     }
 }
 
-pub fn parse_actions(actions: &str, pb: Option<Arc<ProgressBar>>) -> Vec<Box<dyn Action>> {
+pub fn parse_actions(actions: &str) -> Vec<Box<dyn Action>> {
     let actions: Vec<crate::actions::ActionKind> = actions
         .split(',')
-        .filter_map(|s| parse_action_kind(s.trim(), pb.clone()))
+        .filter_map(|s| parse_action_kind(s.trim()))
         .collect();
 
     let boxed_actions: Vec<Box<dyn crate::actions::Action>> = actions

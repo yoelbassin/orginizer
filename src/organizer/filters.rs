@@ -1,8 +1,8 @@
-use std::{path::Path, sync::Arc};
+use std::path::Path;
 
 use crate::filters::{Filter, FilterConfig, FilterKind, FilterKindType};
 
-pub(crate) fn filters_pipeline(path: &Path, filters: &[Arc<dyn Filter>]) -> bool {
+pub(crate) fn filters_pipeline(path: &Path, filters: &[Box<dyn Filter>]) -> bool {
     for filter in filters {
         let _ = filter.apply(path) || return false;
     }

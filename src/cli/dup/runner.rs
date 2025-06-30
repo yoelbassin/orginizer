@@ -3,7 +3,7 @@ use crate::cli::parsers::{parse_actions, parse_targets};
 
 pub fn run_dup(args: &super::args::DupArgs) {
     let filters = parse_filters(&args.by);
-    let actions = parse_actions(&args.action, None);
+    let actions = parse_actions(&args.action);
 
     let reference = std::path::PathBuf::from(&args.reference);
     let targets = parse_targets(&args.targets);

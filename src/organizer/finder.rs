@@ -1,7 +1,4 @@
-use std::{
-    path::{Path, PathBuf},
-    sync::Arc,
-};
+use std::path::{Path, PathBuf};
 
 use either::Either;
 use walkdir::{DirEntry, WalkDir};
@@ -31,16 +28,16 @@ fn make_walker<P: AsRef<std::path::Path>>(
     walker.sort_by(|a, b| a.path().cmp(b.path())).into_iter()
 }
 
-pub fn finder(
+pub fn finder<Filters: AsRef<[Box<dyn Filter>]>>(
     path: &Path,
     recursive: bool,
-    filters: Vec<Arc<dyn Filter>>,
+    filters: Filters,
 ) -> impl Iterator<Item = PathBuf> {
     let walker = make_walker(path, recursive);
     walker
         .filter_map(Result::ok)
         .filter(|entry| is_file(entry) && exists(entry))
-        .filter(move |entry| filters_pipeline(entry.path(), &filters))
+        .filter(move |entry| filters_pipeline(entry.path(), filters.as_ref()))
         .map(|entry| entry.path().to_path_buf())
 }
 
@@ -58,10 +55,7 @@ pub fn duplicate_finder(
         return Either::Left(empty_iter());
     }
 
-    let filters: Vec<Arc<dyn Filter>> = filters_factory(filter_configs, &reference)
-        .into_iter()
-        .map(Arc::from)
-        .collect();
+    let filters = filters_factory(filter_configs, &reference);
 
     Either::Right(finder(path, recursive, filters))
 }
