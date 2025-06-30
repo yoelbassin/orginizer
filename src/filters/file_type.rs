@@ -3,7 +3,7 @@ use std::path::Path;
 use crate::filters::{Filter, FilterConfig, FromFile};
 
 pub struct FileTypeFilter {
-    file_type: String,
+    pub file_type: String,
 }
 
 impl Filter for FileTypeFilter {

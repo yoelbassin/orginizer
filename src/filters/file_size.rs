@@ -9,8 +9,8 @@ pub struct FileSizeFilterConfig {
 impl FilterConfig for FileSizeFilterConfig {}
 
 pub struct FileSizeFilter {
-    size: u64,
-    proximity: u64,
+    pub size: u64,
+    pub proximity: u64,
 }
 
 impl Filter for FileSizeFilter {

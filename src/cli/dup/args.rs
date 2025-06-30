@@ -1,8 +1,7 @@
-use clap::Parser;
+use clap::Args;
 
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-pub struct Cli {
+#[derive(Args, Debug)]
+pub struct DupArgs {
     /// Filters to match by (default: NAME,SIZE,IMAGE_CONTENT,SKIP_SELF)
     #[arg(long, default_value = "NAME,SIZE,IMAGE_CONTENT,SKIP_SELF")]
     pub by: String,

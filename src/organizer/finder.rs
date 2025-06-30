@@ -83,10 +83,3 @@ pub fn duplicates_finder(
             (reference_path, duplicates)
         })
 }
-
-pub fn count_reference_files(reference: &PathBuf, recursive: bool) -> usize {
-    make_walker(reference, recursive)
-        .filter_map(Result::ok)
-        .filter(|entry| entry.file_type().is_file())
-        .count()
-}
