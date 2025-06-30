@@ -34,7 +34,7 @@ fn parse_filter_kind(filter: &str) -> Option<(FilterKindType, Box<dyn FilterConf
     let (filter_type, filter_config) = split_string_by_equal_sign(filter);
 
     match filter_type.to_uppercase().as_str() {
-        "FILE_PREFIX" => {
+        "PREFIX" => {
             let length = filter_config.unwrap().parse::<usize>().unwrap();
             Some((
                 FilterKindType::FilePrefix,
@@ -49,10 +49,12 @@ fn parse_filter_kind(filter: &str) -> Option<(FilterKindType, Box<dyn FilterConf
                 Box::new(FileSizeFilterConfig { proximity }),
             ))
         }
+        "TYPE" => Some((FilterKindType::FileType, Box::new(DummyConfig))),
         "DATE_MODIFIED" => Some((FilterKindType::DateModified, Box::new(DummyConfig))),
         "DATE_CREATED" => Some((FilterKindType::DateCreated, Box::new(DummyConfig))),
         "IMAGE_CONTENT" => Some((FilterKindType::ImageContent, Box::new(DummyConfig))),
         "SKIP_SELF" => Some((FilterKindType::SkipSelf, Box::new(DummyConfig))),
+        "EXIF_CREATED" => Some((FilterKindType::ExifCreated, Box::new(DummyConfig))),
         _ => panic!("Unknown filter: {}", filter_type),
     }
 }
